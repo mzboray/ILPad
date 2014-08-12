@@ -17,10 +17,11 @@ using Mono.Cecil;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.MSBuild;
+using ReactiveUI;
 
 namespace ILPad
 {
-    class ILPadViewModel : INotifyPropertyChanged
+    class ILPadViewModel : ReactiveObject
     {
         private static readonly string Indent = "    ";
         private static readonly MetadataReference Mscorlib = new MetadataFileReference(typeof(object).Assembly.Location);
@@ -57,57 +58,27 @@ class Program
 
         public string SourceText
         {
-            get
-            {
-                return _sourceText;
-            }
-            set
-            {
-                _sourceText = value;
-                OnPropertyChanged();
-            }
+            get { return _sourceText; }
+            set { this.RaiseAndSetIfChanged(ref _sourceText, value); }
         }
 
         public string OutputText
         {
-            get
-            {
-                return _outputText;
-            }
-            set
-            {
-                _outputText = value;
-                OnPropertyChanged();
-            }
+            get { return _outputText; }
+            set { this.RaiseAndSetIfChanged(ref _outputText, value); }
         }
 
         public bool IsError
         {
-            get
-            {
-                return _isError;
-            }
-            set
-            {
-                _isError = value;
-                OnPropertyChanged();
-            }
+            get { return _isError; }
+            set { this.RaiseAndSetIfChanged(ref _isError, value); }
         }
 
         public bool IsWorking
         {
-            get
-            {
-                return _isWorking;
-            }
-            set
-            {
-                _isWorking = value;
-                OnPropertyChanged();
-            }
+            get { return _isWorking; }
+            set { this.RaiseAndSetIfChanged(ref _isWorking, value); }
         }
-
-        public event PropertyChangedEventHandler PropertyChanged;
 
         public async Task GenerateCode()
         {
@@ -222,15 +193,6 @@ class Program
                 writer.WriteLine();
             }
             writer.Indent--;
-        }
-
-        private void OnPropertyChanged([CallerMemberName]string propertyName = null)
-        {
-            var handler = PropertyChanged;
-            if (handler != null)
-            {
-                handler(this, new PropertyChangedEventArgs(propertyName));
-            }
         }
     }
 
