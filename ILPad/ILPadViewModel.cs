@@ -18,6 +18,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.MSBuild;
 using ReactiveUI;
+using System.Reactive.Linq;
 
 namespace ILPad
 {
@@ -45,12 +46,13 @@ class Program
         public ILPadViewModel()
         {
             _sourceText = InitialCode;
-            GenerateCommand = new GenerateCommand(this);
             CleanupCommand = new CleanupCommand(this);
             CompilerOptions = new CompilerOptionsViewModel();
+            this.WhenAny(vm => vm.SourceText, c => string.IsNullOrEmpty(c.Value)).Throttle(TimeSpan.FromSeconds(1)).Subscribe(async _ =>
+            {
+                await GenerateCode();
+            });
         }
-
-        public ICommand GenerateCommand { get; set; }
 
         public ICommand CleanupCommand { get; set; }
 
