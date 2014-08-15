@@ -46,9 +46,20 @@ class Program
         public ILPadViewModel()
         {
             _sourceText = InitialCode;
-            CleanupCommand = new CleanupCommand(this);
             CompilerOptions = new CompilerOptionsViewModel();
-            this.WhenAny(vm => vm.SourceText, c => string.IsNullOrEmpty(c.Value)).Throttle(TimeSpan.FromSeconds(1)).Subscribe(async _ =>
+            var command = ReactiveCommand.Create();
+            command.Subscribe(async _ =>
+            {
+                await Task.Run(() =>
+                {
+                    var tree = SyntaxFactory.ParseSyntaxTree(SourceText);
+                    var newRoot = Formatter.Format(tree.GetRoot(), MSBuildWorkspace.Create());
+                    SourceText = newRoot.GetText().ToString();
+                });
+            });
+            CleanupCommand = command;
+            this.WhenAny(vm => vm.SourceText, c => string.IsNullOrEmpty(c.Value))
+                .Throttle(TimeSpan.FromSeconds(1)).Subscribe(async _ =>
             {
                 await GenerateCode();
             });
@@ -197,66 +208,4 @@ class Program
             writer.Indent--;
         }
     }
-
-    class CleanupCommand : ICommand 
-    {
-        private ILPadViewModel _viewModel;
-
-        public CleanupCommand(ILPadViewModel viewModel)
-        {
-            _viewModel = viewModel;
-        }
-
-        public bool CanExecute(object parameter)
-        {
-            return true;
-        }
-
-        public event EventHandler CanExecuteChanged
-        {
-            add
-            {
-                CommandManager.RequerySuggested += value;
-            }
-            remove
-            {
-                CommandManager.RequerySuggested -= value;
-            }
-        }
-
-        public void Execute(object parameter)
-        {
-            var tree = SyntaxFactory.ParseSyntaxTree(_viewModel.SourceText);
-            var newRoot = Formatter.Format(tree.GetRoot(), MSBuildWorkspace.Create());
-            _viewModel.SourceText = newRoot.GetText().ToString();
-        }
-    }
-
-    class BooleanNotConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            if (value is bool)
-            {
-                return !(bool)value;
-            }
-            else
-            {
-                return DependencyProperty.UnsetValue;
-            }
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            if (value is bool)
-            {
-                return !(bool)value;
-            }
-            else
-            {
-                return DependencyProperty.UnsetValue;
-            }
-        }
-    }
-
 }

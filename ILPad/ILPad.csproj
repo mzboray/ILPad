@@ -120,6 +120,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="BooleanNotConverter.cs" />
     <Compile Include="CecilExtensions.cs" />
     <Compile Include="CompilerOptionsViewModel.cs" />
     <Compile Include="ILPadViewModel.cs" />
