@@ -124,8 +124,6 @@
     <Compile Include="CompilerOptionsViewModel.cs" />
     <Compile Include="GenerateCommand.cs" />
     <Compile Include="BooleanNotConverter.cs" />
-    <Compile Include="CecilExtensions.cs" />
-    <Compile Include="CompilerOptionsViewModel.cs" />
     <Compile Include="ILPadViewModel.cs" />
     <Compile Include="ILPadView.xaml.cs">
       <DependentUpon>ILPadView.xaml</DependentUpon>
