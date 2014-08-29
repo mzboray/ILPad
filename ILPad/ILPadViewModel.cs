@@ -17,10 +17,12 @@ using Mono.Cecil;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.MSBuild;
+using ReactiveUI;
+using System.Reactive.Linq;
 
 namespace ILPad
 {
-    class ILPadViewModel : INotifyPropertyChanged
+    class ILPadViewModel : ReactiveObject
     {
         private static readonly string Indent = "    ";
         private static readonly MetadataReference Mscorlib = new MetadataFileReference(typeof(object).Assembly.Location);
@@ -44,12 +46,24 @@ class Program
         public ILPadViewModel()
         {
             _sourceText = InitialCode;
-            GenerateCommand = new GenerateCommand(this);
-            CleanupCommand = new CleanupCommand(this);
             CompilerOptions = new CompilerOptionsViewModel();
+            var command = ReactiveCommand.Create();
+            command.Subscribe(async _ =>
+            {
+                await Task.Run(() =>
+                {
+                    var tree = SyntaxFactory.ParseSyntaxTree(SourceText);
+                    var newRoot = Formatter.Format(tree.GetRoot(), MSBuildWorkspace.Create());
+                    SourceText = newRoot.GetText().ToString();
+                });
+            });
+            CleanupCommand = command;
+            this.WhenAny(vm => vm.SourceText, c => string.IsNullOrEmpty(c.Value))
+                .Throttle(TimeSpan.FromSeconds(1)).Subscribe(async _ =>
+            {
+                await GenerateCode();
+            });
         }
-
-        public ICommand GenerateCommand { get; set; }
 
         public ICommand CleanupCommand { get; set; }
 
@@ -57,57 +71,27 @@ class Program
 
         public string SourceText
         {
-            get
-            {
-                return _sourceText;
-            }
-            set
-            {
-                _sourceText = value;
-                OnPropertyChanged();
-            }
+            get { return _sourceText; }
+            set { this.RaiseAndSetIfChanged(ref _sourceText, value); }
         }
 
         public string OutputText
         {
-            get
-            {
-                return _outputText;
-            }
-            set
-            {
-                _outputText = value;
-                OnPropertyChanged();
-            }
+            get { return _outputText; }
+            set { this.RaiseAndSetIfChanged(ref _outputText, value); }
         }
 
         public bool IsError
         {
-            get
-            {
-                return _isError;
-            }
-            set
-            {
-                _isError = value;
-                OnPropertyChanged();
-            }
+            get { return _isError; }
+            set { this.RaiseAndSetIfChanged(ref _isError, value); }
         }
 
         public bool IsWorking
         {
-            get
-            {
-                return _isWorking;
-            }
-            set
-            {
-                _isWorking = value;
-                OnPropertyChanged();
-            }
+            get { return _isWorking; }
+            set { this.RaiseAndSetIfChanged(ref _isWorking, value); }
         }
-
-        public event PropertyChangedEventHandler PropertyChanged;
 
         public async Task GenerateCode()
         {
@@ -223,76 +207,5 @@ class Program
             }
             writer.Indent--;
         }
-
-        private void OnPropertyChanged([CallerMemberName]string propertyName = null)
-        {
-            var handler = PropertyChanged;
-            if (handler != null)
-            {
-                handler(this, new PropertyChangedEventArgs(propertyName));
-            }
-        }
     }
-
-    class CleanupCommand : ICommand 
-    {
-        private ILPadViewModel _viewModel;
-
-        public CleanupCommand(ILPadViewModel viewModel)
-        {
-            _viewModel = viewModel;
-        }
-
-        public bool CanExecute(object parameter)
-        {
-            return true;
-        }
-
-        public event EventHandler CanExecuteChanged
-        {
-            add
-            {
-                CommandManager.RequerySuggested += value;
-            }
-            remove
-            {
-                CommandManager.RequerySuggested -= value;
-            }
-        }
-
-        public void Execute(object parameter)
-        {
-            var tree = SyntaxFactory.ParseSyntaxTree(_viewModel.SourceText);
-            var newRoot = Formatter.Format(tree.GetRoot(), MSBuildWorkspace.Create());
-            _viewModel.SourceText = newRoot.GetText().ToString();
-        }
-    }
-
-    class BooleanNotConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            if (value is bool)
-            {
-                return !(bool)value;
-            }
-            else
-            {
-                return DependencyProperty.UnsetValue;
-            }
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            if (value is bool)
-            {
-                return !(bool)value;
-            }
-            else
-            {
-                return DependencyProperty.UnsetValue;
-            }
-        }
-    }
-
 }

@@ -6,59 +6,29 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using ReactiveUI;
 
 namespace ILPad
 {
-    public class CompilerOptionsViewModel : INotifyPropertyChanged
+    public class CompilerOptionsViewModel : ReactiveObject
     {
         private bool _optimize = false;
         public bool Optimize
         {
-            get
-            {
-                return _optimize;
-            }
-            set
-            {
-                if (value != _optimize)
-                {
-                    _optimize = value;
-                    OnPropertyChanged("Optimize");
-                }
-            }
+            get { return _optimize; }
+            set { this.RaiseAndSetIfChanged(ref _optimize, value); }
         }
 
         private bool _allowUnsafe = false;
         public bool AllowUnsafe
         {
-            get
-            {
-                return _allowUnsafe;
-            }
-            set
-            {
-                if (value != _allowUnsafe)
-                {
-                    _allowUnsafe = value;
-                    OnPropertyChanged("AllowUnsafe");
-                }
-            }
+            get { return _allowUnsafe; }
+            set { this.RaiseAndSetIfChanged(ref _allowUnsafe, value); }
         }
 
         public CSharpCompilationOptions GetOptions()
         {
             return new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, optimize: Optimize, allowUnsafe: AllowUnsafe);
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        public void OnPropertyChanged(string propertyName)
-        {
-            var handler = PropertyChanged;
-            if (handler != null)
-            {
-                handler(this, new PropertyChangedEventArgs(propertyName));
-            }
         }
     }
 }

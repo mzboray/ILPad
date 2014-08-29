@@ -18,7 +18,6 @@
                 </StackPanel>
             </GroupBox>
             <Button HorizontalAlignment="Right" Width="100" Command="{Binding CleanupCommand}">Clean up</Button>
-            <Button HorizontalAlignment="Right" Width="100" Command="{Binding GenerateCommand}">Generate</Button>
         </StackPanel>
         <Grid>
             <Grid.ColumnDefinitions>
@@ -29,7 +28,7 @@
             <TextBox FontFamily="Consolas" Margin="3 3 0 0" Grid.Column="0" 
                      AcceptsReturn="True" TextWrapping="Wrap" 
                      VerticalScrollBarVisibility="Auto"
-                     Text="{Binding SourceText}" />
+                     Text="{Binding SourceText, UpdateSourceTrigger=PropertyChanged}" />
             <GridSplitter Grid.Column="1" Margin="2 0 2 0" Width="8" Height="50" Background="LightGray" HorizontalAlignment="Center" VerticalAlignment="Center" />
             <TextBox FontFamily="Consolas" Margin="0 3 3 0" Grid.Column="2" 
                      AcceptsReturn="True" TextWrapping="Wrap" 
