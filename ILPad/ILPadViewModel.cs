@@ -50,15 +50,17 @@ class Program
             var command = ReactiveCommand.Create();
             command.Subscribe(async _ =>
             {
-                await Task.Run(() =>
+                var newText = await Task.Run(() =>
                 {
                     var tree = SyntaxFactory.ParseSyntaxTree(SourceText);
                     var newRoot = Formatter.Format(tree.GetRoot(), MSBuildWorkspace.Create());
-                    SourceText = newRoot.GetText().ToString();
+                    return newRoot.GetText().ToString();
                 });
+                SourceText = newText;
             });
             CleanupCommand = command;
-            this.WhenAny(vm => vm.SourceText, c => string.IsNullOrEmpty(c.Value))
+            var optimized = this.WhenAnyValue(vm => vm.CompilerOptions.Optimize);
+            this.WhenAny(vm => vm.SourceText, c => string.IsNullOrEmpty(c.Value)).Merge(optimized)
                 .Throttle(TimeSpan.FromSeconds(1)).Subscribe(async _ =>
             {
                 await GenerateCode();
